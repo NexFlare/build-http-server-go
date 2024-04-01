@@ -30,19 +30,15 @@ func main() {
 		fmt.Println("Error accepting connection: ", err.Error())
 		os.Exit(1)
 	}
-	buffer := make([]byte, 1024)
-	_, err = conn.Read(buffer)
-	if err != nil {
-		fmt.Println("Error reading request: ", err.Error())
-	}
-	req := string(buffer[:])
-	reqLines := strings.Split(req, "\r\n")
-	startLine := reqLines[0]
-	path := strings.Split(startLine, " ")[1]
-	set := make(map[string]void)
-	set["/"] = void{}
-	if _, ok:= set[path]; ok {
+	path, err := GetUrl(conn)
+	// set := make(map[string]void)
+	// set["/"] = void{}
+	if *path == "/" {
 		_, err = conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
+	} else if strings.Contains(*path, "/echo/") {
+		content := (*path)[6:]
+		fmt.Println("Content is ", content)
+		_, err = conn.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length:%+v\r\n\r\n%v\r\n",len(content), content)))
 	} else {
 		_, err = conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
 	}
@@ -54,3 +50,17 @@ func main() {
 }
 
 // func
+
+func GetUrl(conn net.Conn) (*string, error) {
+	buffer := make([]byte, 1024)
+	_, err := conn.Read(buffer)
+	if err != nil {
+		fmt.Println("Error reading request: ", err.Error())
+		return nil, err
+	}
+	req := string(buffer[:])
+	reqLines := strings.Split(req, "\r\n")
+	startLine := reqLines[0]
+	path := strings.Split(startLine, " ")[1]
+	return &path, nil
+}
