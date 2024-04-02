@@ -12,14 +12,13 @@ import (
 type conn string
 
 type server struct {
-	Request request.Request
 	ctx context.ServerContext
+	listener net.Listener
 }
 
-func NewServer(ctx *context.ServerContext) *server {
+func NewServer(l net.Listener) *server {
 	return &server{
-		Request: *request.NewRequest(*ctx),
-		ctx: *ctx,
+		listener: l,
 	}
 }
 
@@ -31,29 +30,26 @@ func CreateConnection(network string, address string) *server {
 		os.Exit(1)
 	}
 
-	// ctx := context.TODO()
-	defer l.Close()
+	// defer l.Close()
 	
-	_conn, err := l.Accept()
-	if err != nil {
-		fmt.Println("Error accepting connection: ", err.Error())
-		os.Exit(1)
-	}
-	
-
-	if err != nil {
-		fmt.Println("Error reading request: ", err.Error())
-		os.Exit(1)
-	}
-	ctx := context.NewServerContext(_conn)
-	server := NewServer(&ctx)
+	server := NewServer(l)
 	return server
 }
 
-func(s *server) GetRequest() *request.Request {
-	return &s.Request
+func(s *server) GetRequest(conn net.Conn) *request.Request {
+	request := request.NewRequest(conn)
+	return request
 }
 
 func(s *server) GetContext() context.ServerContext {
 	return s.ctx
+}
+
+func(s *server) AcceptConnection() net.Conn{
+	conn, err := s.listener.Accept()
+	if err != nil {
+		fmt.Println("Error accepting connection: ", err.Error())
+		os.Exit(1)
+	}
+	return conn
 }
