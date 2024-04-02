@@ -16,6 +16,7 @@ type Request struct {
 	URL string
 	Method string
 	ctx *context.ServerContext
+	conn net.Conn
 }
 
 type RequestHeader struct {
@@ -40,6 +41,7 @@ func NewRequest(conn net.Conn) *Request{
 		RequestHeader: *headers,
 		URL: *url,
 		Method: *method,
+		conn: conn,
 	}
 }
 
@@ -55,6 +57,10 @@ func (r *Request) GetContext() (*context.ServerContext) {
 	return r.ctx
 }
 
+func (r *Request) GetConnection() net.Conn {
+	return r.conn
+}
+ 
 
 func getHeader(data []byte) (*RequestHeader, error) {
 	req := string(data[:])
