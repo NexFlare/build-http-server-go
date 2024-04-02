@@ -22,7 +22,9 @@ func main() {
 	for {
 		conn := server.AcceptConnection()
 		go func() {
+			defer conn.Close()
 			request := server.GetRequest(conn)
+			fmt.Println("URL is", request.GetUrl())
 			err := processRequest(request, dir)
 			if err != nil {
 				fmt.Println("Error while writing: ", err.Error())
@@ -33,10 +35,6 @@ func main() {
 }
 
 func processRequest(request *request.Request, dir *string) error {
-	if dir != nil {
-		fmt.Println("The directory name is", *dir)
-	}
-	
 	url := request.GetUrl()
 	conn := request.GetConnection()
 	var err error
@@ -54,12 +52,10 @@ func processRequest(request *request.Request, dir *string) error {
 		fmt.Println("file name is", fileName)
 		if dir != nil {
 			file := fmt.Sprintf("%s%s", *dir, fileName)
-			data, err := os.ReadFile(file)
-			if err != nil {
-				fmt.Println("Error is", err.Error())
-				_, err = conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
+			data, readFileError := os.ReadFile(file)
+			if readFileError != nil {
+				_, err = conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n\r\n"))
 			} else {
-				fmt.Println("File size is", len(data))
 				content := string(data[:])
 				_, err = conn.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length:%+v\r\n\r\n%v\r\n",len(content), content)))
 			}
