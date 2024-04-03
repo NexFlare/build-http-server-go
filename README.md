@@ -1,38 +1,31 @@
-[![progress-banner](https://backend.codecrafters.io/progress/http-server/c3c94d82-ded5-4d3f-8fcd-6b03d85a4582)](https://app.codecrafters.io/users/codecrafters-bot?r=2qF)
+# Build Your Own HTTP Server
 
-This is a starting point for Go solutions to the
-["Build Your Own HTTP server" Challenge](https://app.codecrafters.io/courses/http-server/overview).
+Welcome to the HTTP server project! This challenge is an exciting journey into the backbone of the web, giving you the opportunity to build a server from the ground up.
 
-[HTTP](https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol) is the
-protocol that powers the web. In this challenge, you'll build a HTTP/1.1 server
-that is capable of serving multiple clients.
+## What is HTTP ?
 
-Along the way you'll learn about TCP servers,
-[HTTP request syntax](https://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html),
-and more.
+[HTTP](https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol) stands for Hypertext Transfer Protocol. It's the foundation of data communication on the World Wide Web. In this project, you'll construct an HTTP/1.1 server capable of serving multiple clients simultaneously.
 
-**Note**: If you're viewing this repo on GitHub, head over to
-[codecrafters.io](https://codecrafters.io) to try the challenge.
+## Project Overview
 
-# Passing the first stage
+Dive into my implementation of an HTTP server crafted from scratch. This server adeptly manages simple GET/POST requests, serves files, and effortlessly handles multiple concurrent connections.
 
-The entry point for your HTTP server implementation is in `app/server.go`. Study
-and uncomment the relevant code, and push your changes to pass the first stage:
+## Run the Server Locally
 
-```sh
-git add .
-git commit -m "pass 1st stage" # any msg
-git push origin master
-```
+To get your HTTP server up and running on your local machine, follow these steps:
 
-Time to move on to the next stage!
+1. **Prerequisites**: Ensure `Go (version 1.19)` is installed on your system.
+2. **Start the Server**: Execute `./your_server.sh` to launch your program, located in `app/server.go`. By default, the server listens on port 4421.
 
-# Stage 2 & beyond
+This project supports following end-points
 
-Note: This section is for stages 2 and beyond.
+1. `/echo/<message_to_echo>`: Echoes back the message sent to this endpoint.
+2. `/user-agent`: Returns the User-Agent header value in plain text.
+3. `/files/<path_to_file>`: Serves the specified file if it exists; returns 404 Not Found otherwise.
+4. `/files/<file_name>` : Saves the content of the request body to the specified file.
 
-1. Ensure you have `go (1.19)` installed locally
-1. Run `./your_server.sh` to run your program, which is implemented in
-   `app/server.go`.
-1. Commit your changes and run `git push origin master` to submit your solution
-   to CodeCrafters. Test output will be streamed to your terminal.
+**Note** : For using `files` path you need to supply a directory to ./your_server.sh by `./your_server.sh --directory <directory>`
+
+## Extend and Experiment
+
+This project is a sandbox for your creativity. Feel free to modify existing endpoints or add new ones to expand the server's capabilities. Dive in, explore HTTP, and make this server uniquely yours. Build you own X by visiting [CodeCrafters](https://app.codecrafters.io/r/good-cicada-186943)

@@ -34,11 +34,7 @@ type RequestHeader struct {
 
 func NewRequest(conn net.Conn) *Request{
 
-	data, err := getData(conn)
-	if err != nil {
-		fmt.Println("error while reading request: ", err.Error())
-		// os.Exit(1)
-	}
+	data, _ := getData(conn)
 	if len(data) == 0 {
 		return &Request{
 			URL: string(""),
