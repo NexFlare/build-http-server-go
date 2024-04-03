@@ -53,3 +53,11 @@ func(s *server) AcceptConnection() net.Conn{
 	}
 	return conn
 }
+
+func(s* server) StartServer(f func(conn net.Conn)) {
+	for {
+		conn := s.AcceptConnection()
+		go f(conn)
+	}
+	
+}

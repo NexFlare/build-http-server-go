@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"os"
 	"strings"
 
 	"github.com/NexFlare/build-http-server-go/internal/context"
@@ -38,7 +37,13 @@ func NewRequest(conn net.Conn) *Request{
 	data, err := getData(conn)
 	if err != nil {
 		fmt.Println("error while reading request: ", err.Error())
-		os.Exit(1)
+		// os.Exit(1)
+	}
+	if len(data) == 0 {
+		return &Request{
+			URL: string(""),
+			conn: conn,
+		}
 	}
 	headers, _ := getHeader(data)
 	method, url, err :=getUrlAndMethod(data)
@@ -84,7 +89,7 @@ func getHeader(data []byte) (*RequestHeader, error) {
 	headers :=  &RequestHeader{
 		Header: map[string]string{},
 	}
-	if len(requestSplit) == 3 {
+	if len(requestSplit) <= 3 {
 		return headers, nil
 	}
 
@@ -110,7 +115,7 @@ func getHeader(data []byte) (*RequestHeader, error) {
 	return &startSplit[0], &startSplit[1], nil
  }
 
- func getData(conn net.Conn) ([]byte, error ){
+ func getData(conn net.Conn) ([]byte, error){
 	buffer := make([]byte, 1024)
 	_, err := conn.Read(buffer)
 	if err != nil {

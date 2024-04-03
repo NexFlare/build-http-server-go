@@ -26,7 +26,6 @@ func NewResponse(conn net.Conn) Response {
 func (r *Response) SendWithBody(status Status, body *string) {
 	r.Body = body
 	r.Status = status
-	fmt.Printf("Respose obj is %+v", r)
 	r.Send()
 }
 

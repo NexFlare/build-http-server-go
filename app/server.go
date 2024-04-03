@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"net"
 	"os"
 	"strings"
 
@@ -18,18 +19,15 @@ func main() {
 	server := server.CreateConnection("tcp", "0.0.0.0:4221")
 	dir := flag.String("directory", "", "The name of the directory")
 	flag.Parse()
-	for {
-		conn := server.AcceptConnection()
-		go func() {
-			defer conn.Close()
-			request := server.GetRequest(conn)
-			err := processRequest(request, dir)
-			if err != nil {
-				fmt.Println("Error while writing: ", err.Error())
-				os.Exit(1)
-			}
-		}()
-	}
+	server.StartServer(func(conn net.Conn) {
+		request := server.GetRequest(conn)
+		err := processRequest(request, dir)
+		if err != nil {
+			fmt.Println("Error while writing: ", err.Error())
+			os.Exit(1)
+		}
+	})
+	
 }
 
 func processRequest(req *request.Request, dir *string) error {
@@ -40,6 +38,7 @@ func processRequest(req *request.Request, dir *string) error {
 
 	if url == "/" {
 		res.Ok()
+		return nil
 	} else if strings.Contains(url, "/echo/") {
 		content := (url)[6:]
 		res.WriteHeader("Content-Type", "text/plain")
