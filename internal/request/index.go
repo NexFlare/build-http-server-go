@@ -15,6 +15,7 @@ type Request struct {
 	RequestHeader
 	URL string
 	Method string
+	Body *string
 	ctx *context.ServerContext
 	conn net.Conn
 }
@@ -32,6 +33,10 @@ func NewRequest(conn net.Conn) *Request{
 	}
 	headers, _ := getHeader(data)
 	method, url, err :=getUrlAndMethod(data)
+	var body *string
+	if *method != "GET" {
+		body = getBody(data)
+	}
 	if err != nil {
 		// TODO
 		fmt.Println("Error while initializing request: ", err.Error())
@@ -42,6 +47,7 @@ func NewRequest(conn net.Conn) *Request{
 		URL: *url,
 		Method: *method,
 		conn: conn,
+		Body: body,
 	}
 }
 
@@ -101,4 +107,15 @@ func getHeader(data []byte) (*RequestHeader, error) {
 		return nil, err
 	}
 	return buffer, nil
+}
+
+func getBody(data []byte) (*string) {
+	var body string
+	req := string(data[:])
+	requestSplit := strings.Split(req, helper.CRLF)
+	if len(requestSplit) >= 3 {
+		body = requestSplit[len(requestSplit)-1]
+		body = strings.Trim(body, "\x00 ")
+	}
+	return &body
 }

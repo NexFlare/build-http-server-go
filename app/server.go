@@ -4,11 +4,13 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	// Uncomment this block to pass the first stage
 
 	"github.com/codecrafters-io/http-server-starter-go/internal/request"
+	"github.com/codecrafters-io/http-server-starter-go/internal/response"
 	"github.com/codecrafters-io/http-server-starter-go/internal/server"
 )
 
@@ -24,7 +26,6 @@ func main() {
 		go func() {
 			defer conn.Close()
 			request := server.GetRequest(conn)
-			fmt.Println("URL is", request.GetUrl())
 			err := processRequest(request, dir)
 			if err != nil {
 				fmt.Println("Error while writing: ", err.Error())
@@ -39,32 +40,79 @@ func processRequest(request *request.Request, dir *string) error {
 	conn := request.GetConnection()
 	var err error
 	if url == "/" {
-		_, err = conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
+		res := response.NewResponse(conn)
+		res.Ok()
 	} else if strings.Contains(url, "/echo/") {
 		content := (url)[6:]
-		fmt.Println("Content is ", content)
-		_, err = conn.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length:%+v\r\n\r\n%v\r\n",len(content), content)))
+		res := response.Response{
+			Header: map[string]string{
+				"Content-Type": "text/plain",
+				"Content-Length": strconv.Itoa(len(content)),
+			},
+			Conn: conn,
+			Body: &content,
+		}
+		res.Ok()
 	} else if url == "/user-agent"{
 		content := request.Header["User-Agent"]
-		_, err = conn.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length:%+v\r\n\r\n%v\r\n",len(content), content)))
+		res := response.Response{
+			Header: map[string]string{
+				"Content-Type": "text/plain",
+				"Content-Length": strconv.Itoa(len(content)),
+			},
+			Conn: conn,
+			Body: &content,
+		}
+		res.Ok()
 	} else if strings.Contains(url, "/files/"){
 		fileName := url[7:]
-		fmt.Println("file name is", fileName)
 		if dir != nil {
 			file := fmt.Sprintf("%s%s", *dir, fileName)
-			data, readFileError := os.ReadFile(file)
-			if readFileError != nil {
-				_, err = conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n\r\n"))
-			} else {
-				content := string(data[:])
-				_, err = conn.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length:%+v\r\n\r\n%v\r\n",len(content), content)))
+			if request.Method == "GET" {
+				data, readFileError := os.ReadFile(file)
+				if readFileError != nil {
+					res := response.NewResponse(conn)
+					res.NotFound()
+				} else {
+					content := string(data[:])
+					res := response.Response{
+						Header: map[string]string{
+							"Content-Type": "application/octet-stream",
+							"Content-Length": strconv.Itoa(len(content)),
+						},
+						Conn: conn,
+						Body: &content,
+					}
+					res.Ok()
+				}
+			} else if request.Method == "POST" {
+				res := response.NewResponse(conn)
+				if request.Body == nil {
+					res.BadRequest()
+					return nil
+				}
+				f, err := os.Create(file)
+				if err != nil {
+					res.ServerError()
+					return err
+				}
+				_, err = f.WriteString(*request.Body)
+				if err != nil {
+					res.ServerError()
+					return err
+				}
+				res.Status = "201 Created"
+				res.Send()
 			}
+			
 		} else {
-			_, err = conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
+			res := response.NewResponse(conn)
+			res.NotFound()
 		}
 
 	}else {
-		_, err = conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
+		res := response.NewResponse(conn)
+		res.NotFound()
 	}
 	return err
 }
