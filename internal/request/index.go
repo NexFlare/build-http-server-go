@@ -7,14 +7,23 @@ import (
 	"os"
 	"strings"
 
-	"github.com/codecrafters-io/http-server-starter-go/internal/context"
-	"github.com/codecrafters-io/http-server-starter-go/internal/helper"
+	"github.com/NexFlare/build-http-server-go/internal/context"
+	"github.com/NexFlare/build-http-server-go/internal/helper"
 )
 
+type Method string
+
+const (
+	GET Method = "GET"
+	POST = "POST"
+	PUT = "PUT"
+	PATCH = "PATCH"
+	DELETE = "DELETE"
+)
 type Request struct {
 	RequestHeader
 	URL string
-	Method string
+	Method Method
 	Body *string
 	ctx *context.ServerContext
 	conn net.Conn
@@ -34,7 +43,7 @@ func NewRequest(conn net.Conn) *Request{
 	headers, _ := getHeader(data)
 	method, url, err :=getUrlAndMethod(data)
 	var body *string
-	if *method != "GET" {
+	if *method != string(GET) {
 		body = getBody(data)
 	}
 	if err != nil {
@@ -42,10 +51,11 @@ func NewRequest(conn net.Conn) *Request{
 		fmt.Println("Error while initializing request: ", err.Error())
 	}
 
+
 	return &Request{
 		RequestHeader: *headers,
 		URL: *url,
-		Method: *method,
+		Method: Method(*method),
 		conn: conn,
 		Body: body,
 	}
@@ -55,7 +65,7 @@ func (r *Request) GetUrl() string {
 	return r.URL
 }
 
-func (r *Request) GetMethod() string {
+func (r *Request) GetMethod() Method {
 	return r.Method
 }
 

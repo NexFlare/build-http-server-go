@@ -4,18 +4,15 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 
-	// Uncomment this block to pass the first stage
-
-	"github.com/codecrafters-io/http-server-starter-go/internal/request"
-	"github.com/codecrafters-io/http-server-starter-go/internal/response"
-	"github.com/codecrafters-io/http-server-starter-go/internal/server"
+	"github.com/NexFlare/build-http-server-go/internal/request"
+	"github.com/NexFlare/build-http-server-go/internal/response"
+	"github.com/NexFlare/build-http-server-go/internal/server"
 )
 
 func main() {
-	// You can use print statements as follows for debugging, they'll be visible when running tests.
+
 	fmt.Println("Logs from your program will appear here!")
 
 	server := server.CreateConnection("tcp", "0.0.0.0:4221")
@@ -35,59 +32,38 @@ func main() {
 	}
 }
 
-func processRequest(request *request.Request, dir *string) error {
-	url := request.GetUrl()
-	conn := request.GetConnection()
+func processRequest(req *request.Request, dir *string) error {
+	url := req.GetUrl()
+	conn := req.GetConnection()
 	var err error
+	res := response.NewResponse(conn)
+
 	if url == "/" {
-		res := response.NewResponse(conn)
 		res.Ok()
 	} else if strings.Contains(url, "/echo/") {
 		content := (url)[6:]
-		res := response.Response{
-			Header: map[string]string{
-				"Content-Type": "text/plain",
-				"Content-Length": strconv.Itoa(len(content)),
-			},
-			Conn: conn,
-			Body: &content,
-		}
-		res.Ok()
+		res.WriteHeader("Content-Type", "text/plain")
+		res.SendWithBody(response.StatusOk, &content)
 	} else if url == "/user-agent"{
-		content := request.Header["User-Agent"]
-		res := response.Response{
-			Header: map[string]string{
-				"Content-Type": "text/plain",
-				"Content-Length": strconv.Itoa(len(content)),
-			},
-			Conn: conn,
-			Body: &content,
-		}
-		res.Ok()
+		content := req.Header["User-Agent"]
+		res.WriteHeader("Content-Type", "text/plain")
+		res.SendWithBody(response.StatusOk, &content)
 	} else if strings.Contains(url, "/files/"){
 		fileName := url[7:]
 		if dir != nil {
 			file := fmt.Sprintf("%s%s", *dir, fileName)
-			if request.Method == "GET" {
+			if req.Method == request.GET {
 				data, readFileError := os.ReadFile(file)
 				if readFileError != nil {
 					res := response.NewResponse(conn)
 					res.NotFound()
 				} else {
 					content := string(data[:])
-					res := response.Response{
-						Header: map[string]string{
-							"Content-Type": "application/octet-stream",
-							"Content-Length": strconv.Itoa(len(content)),
-						},
-						Conn: conn,
-						Body: &content,
-					}
-					res.Ok()
+					res.WriteHeader("Content-Type", "application/octet-stream")
+					res.SendWithBody(response.StatusOk, &content)
 				}
-			} else if request.Method == "POST" {
-				res := response.NewResponse(conn)
-				if request.Body == nil {
+			} else if req.Method == request.POST {
+				if req.Body == nil {
 					res.BadRequest()
 					return nil
 				}
@@ -96,22 +72,20 @@ func processRequest(request *request.Request, dir *string) error {
 					res.ServerError()
 					return err
 				}
-				_, err = f.WriteString(*request.Body)
+				_, err = f.WriteString(*req.Body)
 				if err != nil {
 					res.ServerError()
 					return err
 				}
-				res.Status = "201 Created"
+				res.Status = response.StatusCreated
 				res.Send()
 			}
 			
 		} else {
-			res := response.NewResponse(conn)
 			res.NotFound()
 		}
 
 	}else {
-		res := response.NewResponse(conn)
 		res.NotFound()
 	}
 	return err

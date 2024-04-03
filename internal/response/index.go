@@ -3,13 +3,14 @@ package response
 import (
 	"fmt"
 	"net"
+	"strconv"
 	"strings"
 )
 
 type Response struct {
 	Header map[string]string
 	Protocol string
-	Status string
+	Status Status
 	Body *string
 	Conn net.Conn
 }
@@ -18,7 +19,15 @@ func NewResponse(conn net.Conn) Response {
 	return Response{
 		Conn: conn,
 		Protocol: "HTTP/1.1",
+		Header: map[string]string{},
 	}
+}
+
+func (r *Response) SendWithBody(status Status, body *string) {
+	r.Body = body
+	r.Status = status
+	fmt.Printf("Respose obj is %+v", r)
+	r.Send()
 }
 
 func (r *Response) Send() {
@@ -26,6 +35,9 @@ func (r *Response) Send() {
 	defer r.Conn.Close()
 	if r.Protocol == "" {
 		r.Protocol = "HTTP/1.1"
+	}
+	if r.Body != nil {
+		r.Header["Content-Length"] = strconv.Itoa(len(*r.Body))
 	}
 	str := fmt.Sprintf("%v %v\r\n", r.Protocol, r.Status)
 	sb.WriteString(str)
@@ -42,26 +54,29 @@ func (r *Response) Send() {
 	}
 	sb.WriteString("\r\n")
 	finalBody := sb.String()
-	fmt.Println("Final body is", finalBody)
 	r.Conn.Write([]byte(finalBody))
 }
 
+func (r *Response) WriteHeader(key string, value string) {
+	r.Header[key] = value
+}
+
 func (r *Response) NotFound() {
-	r.Status = "404 Not Found"
+	r.Status = StatusNotFound
 	r.Send()
 }
 
 func (r *Response) Ok() {
-	r.Status = "200 OK"
+	r.Status = StatusOk
 	r.Send()
 }
 
 func (r *Response) ServerError() {
-	r.Status = "500 Internal Server Error"
+	r.Status = StatusInternalServerError
 	r.Send()
 }
 
 func (r *Response) BadRequest() {
-	r.Status = "400 Bad Request"
+	r.Status = StatusBadRequest
 	r.Send()
 }

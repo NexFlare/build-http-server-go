@@ -6,6 +6,6 @@
 //
 // DON'T EDIT THIS!
 
-module github.com/codecrafters-io/http-server-starter-go
+module github.com/NexFlare/build-http-server-go
 
 go 1.19
